@@ -98,7 +98,7 @@ QtObject {
     function valueText(meter) {
         if (!meter || meter.kind === "placeholder") return "—"
         if (meter.kind === "credit")
-            return (meter.estimate ? "≈" : "") + formatMoney(meter.remaining)
+            return formatMoney(meter.remaining)
         if (gaugeLabel === "time") {
             var t = formatCountdown(meter.resets_at)
             if (t !== "") return t
@@ -122,6 +122,28 @@ QtObject {
         if (!meter || meter.kind !== "window") return ""
         if (gaugeLabel === "time") return Math.round(meter.percent) + "%"
         return formatCountdown(meter.resets_at)
+    }
+
+    // Dollar input uses a dot decimal separator, with no grouping separators.
+    // Refuse commas rather than misreading "1,000" as one dollar.
+    function parseBalance(text) {
+        var s = String(text).trim().replace(/^\$/, "")
+        if (!/^\d{1,6}(\.\d{1,4})?$/.test(s)) return NaN
+        return Number(s)
+    }
+
+    // Milliseconds until the next window reset, or -1 if none is pending.
+    function msUntilNextReset() {
+        var best = -1
+        for (var i = 0; i < groups.length; i++) {
+            var ms = groups[i].meters || []
+            for (var j = 0; j < ms.length; j++) {
+                if (!ms[j].resets_at) continue
+                var d = new Date(ms[j].resets_at).getTime() - nowMs
+                if (d > 0 && (best < 0 || d < best)) best = d
+            }
+        }
+        return best
     }
 
     function ago(ms) {

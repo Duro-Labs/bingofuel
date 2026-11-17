@@ -6,8 +6,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -71,8 +73,8 @@ func (t TypeSafe) LoadLedger() (Ledger, error) {
 
 // SetBalance records the balance the user just read off the TypeSafe console.
 func (t TypeSafe) SetBalance(usd float64, at time.Time) error {
-	if usd < 0 {
-		return errors.New("balance cannot be negative")
+	if usd < 0 || math.IsNaN(usd) || math.IsInf(usd, 0) {
+		return errors.New("balance must be a finite, non-negative amount")
 	}
 	l, err := t.LoadLedger()
 	if err != nil {
@@ -86,7 +88,10 @@ func (t TypeSafe) SetBalance(usd float64, at time.Time) error {
 	if err != nil {
 		return err
 	}
-	data, _ := json.MarshalIndent(l, "", "  ")
+	data, err := json.MarshalIndent(l, "", "  ")
+	if err != nil || len(data) == 0 {
+		return fmt.Errorf("could not encode the ledger: %v", err)
+	}
 	return config.WriteFileAtomic(p, data, 0o600)
 }
 
@@ -112,10 +117,15 @@ func (t TypeSafe) ScanUsage(since time.Time) Usage {
 		for sc.Scan() {
 			scanLine(sc.Bytes(), since, &u)
 		}
+		if sc.Err() != nil { // e.g. a line over 8 MB: say so rather than under-count
+			u.Unreadable = append(u.Unreadable, path+" (stopped early)")
+		}
 		f.Close()
 	}
 	return u
 }
+
+var billingRe = regexp.MustCompile(`\b402\b|billing|payment required`)
 
 // scanLine understands the Hermes delegation-tiers decision log
 // ({"ts": <epoch>, "jev": {"input_tokens": N} | {"error": "..."}}) and a
@@ -126,12 +136,6 @@ func scanLine(line []byte, since time.Time, u *Usage) {
 		return
 	}
 	ts := parseTime(rec["ts"])
-	if ts == nil {
-		if f, ok := num(rec["ts"]); ok { // fractional epoch
-			t := time.Unix(int64(f), int64((f-float64(int64(f)))*1e9))
-			ts = &t
-		}
-	}
 	if ts == nil || !ts.After(since) {
 		return
 	}
@@ -142,7 +146,7 @@ func scanLine(line []byte, since time.Time, u *Usage) {
 		return // jev: null, JEV was not consulted
 	}
 	if e := strings.ToLower(str(src["error"])); e != "" {
-		if strings.Contains(e, "402") || strings.Contains(e, "billing") || strings.Contains(e, "payment required") {
+		if billingRe.MatchString(e) {
 			u.SawBilling = true
 		}
 		return

@@ -66,7 +66,8 @@ TestCase {
         compare(store.nameText(c), "")
         compare(store.countdownText(c), "")
         c = JSON.parse(JSON.stringify(c)); c.estimate = true
-        compare(store.valueText(c), "≈$9.93")
+        compare(store.valueText(c), "$9.93", "estimate status belongs in the tooltip, not the ring")
+        verify(store.tooltip(store.groups[1], c).indexOf("Estimated") >= 0)
     }
 
     function test_rings_selection_and_placeholder() {
@@ -107,5 +108,21 @@ TestCase {
         verify(2 * grid + store.ringGap(grid) <= 400)
         verify(4 * row + 2 * store.ringGap(row) + store.groupGap(row) <= 400)
         compare(store.fitRingSize([], 400, 400, "grid", true), 0)
+    }
+
+    function test_parse_balance() {
+        compare(store.parseBalance("4.98"), 4.98)
+        verify(isNaN(store.parseBalance("4,98")))
+        verify(isNaN(store.parseBalance("1,000")), "must not become one dollar")
+        compare(store.parseBalance("$5"), 5)
+        verify(isNaN(store.parseBalance("1,000.50")), "thousands separators are refused")
+        verify(isNaN(store.parseBalance("NaN")))
+        verify(isNaN(store.parseBalance("")))
+        verify(isNaN(store.parseBalance("-3")))
+    }
+
+    function test_next_reset() {
+        // nowMs is 19:00Z; the Claude 5-Hour resets 22:22Z.
+        compare(store.msUntilNextReset(), (3 * 60 + 22) * 60000)
     }
 }

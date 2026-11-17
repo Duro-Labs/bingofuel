@@ -105,6 +105,34 @@ func TestErrorKeepsFiguresDimmedAndRetries(t *testing.T) {
 	}
 }
 
+func TestRateLimitAfterFailureStaysDimmed(t *testing.T) {
+	r := newRig(t, nil)
+	r.run()
+	r.clock = r.clock.Add(6 * time.Minute)
+	r.err = &providers.Error{Status: model.StatusStale, Message: "could not reach Fake"}
+	r.run()
+	r.clock = r.clock.Add(2 * time.Minute)
+	r.err = &providers.Error{Status: model.StatusRateLimited, Message: "429"}
+	g := r.run()
+	if !g.Status.Dimmed() || len(g.Meters) != 1 {
+		t.Errorf("stale figures must stay dimmed through a 429: %+v", g)
+	}
+	r.err = nil
+	r.clock = r.clock.Add(10 * time.Minute)
+	r.run()
+	if r.calls != 3 {
+		t.Errorf("the 429 hold still applies; calls=%d", r.calls)
+	}
+}
+
+func TestRateLimitWithoutCacheIsDimmed(t *testing.T) {
+	r := newRig(t, nil)
+	r.err = &providers.Error{Status: model.StatusRateLimited, Message: "429"}
+	if g := r.run(); !g.Status.Dimmed() {
+		t.Errorf("no data yet must not look current: %+v", g)
+	}
+}
+
 func TestPlanLapsedDropsFigures(t *testing.T) {
 	r := newRig(t, nil)
 	r.run()

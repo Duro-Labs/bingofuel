@@ -9,6 +9,28 @@ import (
 	"github.com/fernandoduro/bingofuel/internal/model"
 )
 
+func TestParseUSD(t *testing.T) {
+	for _, s := range []string{"NaN", "Inf", "-Inf", "-1", "", "1,000.50"} {
+		if _, err := parseUSD(s); err == nil {
+			t.Errorf("parseUSD(%q) accepted", s)
+		}
+	}
+	for _, s := range []string{"5", "$5.00", " 5.00 "} {
+		if got, err := parseUSD(s); err != nil || got != 5 {
+			t.Errorf("parseUSD(%q) = %v, %v", s, got, err)
+		}
+	}
+}
+
+func TestRingSelectionRequiresOne(t *testing.T) {
+	if atLeastOne(nil) == nil {
+		t.Error("empty selection accepted")
+	}
+	if err := atLeastOne([]string{"session"}); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestCountdown(t *testing.T) {
 	for d, want := range map[time.Duration]string{
 		3*time.Hour + 22*time.Minute:  "03:22",

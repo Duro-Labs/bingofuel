@@ -40,7 +40,7 @@ type Claude struct {
 	// Dir is the Claude Code config folder. Empty: $CLAUDE_CONFIG_DIR, then ~/.claude.
 	Dir string `toml:"dir"`
 	// Meters shown as rings: session, weekly, model_weekly (top model), or any
-	// meter id printed by `bingofuel fetch`. Empty: session + weekly.
+	// meter id printed by `bingofuel fetch`. Empty: every reported meter.
 	Meters []string `toml:"meters"`
 }
 
@@ -196,8 +196,19 @@ func WriteFileAtomic(path string, data []byte, perm os.FileMode) error {
 		tmp.Close()
 		return err
 	}
+	if err := tmp.Sync(); err != nil {
+		tmp.Close()
+		return err
+	}
 	if err := tmp.Close(); err != nil {
 		return err
 	}
-	return os.Rename(tmp.Name(), path)
+	if err := os.Rename(tmp.Name(), path); err != nil {
+		return err
+	}
+	if d, err := os.Open(filepath.Dir(path)); err == nil { // persist the rename
+		_ = d.Sync()
+		d.Close()
+	}
+	return nil
 }

@@ -126,7 +126,7 @@ func (c Codex) Fetch(ctx context.Context, now time.Time) (model.Group, error) {
 	}
 	g.Plan, g.Meters, g.Details = parseCodex(m, now)
 	if len(g.Meters) == 0 {
-		return g, errf(model.StatusError, "Codex reported no usage windows")
+		return g, errf(model.StatusPlanLapsed, "Codex reported no usage windows: is the plan still active?")
 	}
 	applySelection(g.Meters, c.Cfg.Meters)
 	return g, nil

@@ -136,7 +136,17 @@ func (e *Engine) one(ctx context.Context, p providers.Provider) model.Group {
 	switch status {
 	case model.StatusRateLimited:
 		next.HoldUntil = model.T(now.Add(RateLimitHold))
-		msg = fmt.Sprintf("%s; holding the last figures until %s", msg, next.HoldUntil.Local().Format("15:04"))
+		hold := next.HoldUntil.Local().Format("15:04")
+		switch {
+		case !hasCache || len(c.Group.Meters) == 0:
+			// Nothing to hold: show it as missing data, not as current.
+			status, msg = model.StatusStale, fmt.Sprintf("%s; no data yet, retrying after %s", msg, hold)
+		case c.Group.Status != model.StatusOK && c.Group.Status != model.StatusRateLimited:
+			// The cached figures were already stale; a 429 doesn't make them current.
+			status, msg = c.Group.Status, fmt.Sprintf("%s; %s; retrying after %s", c.Group.Message, msg, hold)
+		default:
+			msg = fmt.Sprintf("%s; holding the last figures until %s", msg, hold)
+		}
 	case model.StatusPlanLapsed, model.StatusNotConfigured:
 		next.Group.Meters = nil // never carry figures from a plan that is gone
 	}

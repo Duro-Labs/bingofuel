@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -17,6 +18,7 @@ import (
 	"github.com/fernandoduro/bingofuel/internal/model"
 	"github.com/fernandoduro/bingofuel/internal/providers"
 	"github.com/fernandoduro/bingofuel/internal/secrets"
+	"golang.org/x/term"
 )
 
 var Version = "dev"
@@ -103,8 +105,8 @@ func cmdJEV(args []string) int {
 	cfg, _ := config.Load()
 	ts := providers.TypeSafe{Cfg: cfg.TypeSafe}
 	if len(args) == 2 && args[0] == "balance" {
-		v, err := strconv.ParseFloat(strings.TrimPrefix(strings.TrimSpace(args[1]), "$"), 64)
-		if err != nil || v < 0 {
+		v, err := parseUSD(args[1])
+		if err != nil {
 			fmt.Fprintln(os.Stderr, "balance must be a non-negative number of US dollars, e.g. 4.98")
 			return 2
 		}
@@ -141,6 +143,16 @@ func cmdJEV(args []string) int {
 	return 2
 }
 
+// parseUSD accepts "4.98" or "$4.98"; rejects negatives, NaN and Inf, which
+// strconv.ParseFloat would otherwise accept.
+func parseUSD(s string) (float64, error) {
+	v, err := strconv.ParseFloat(strings.TrimPrefix(strings.TrimSpace(s), "$"), 64)
+	if err != nil || v < 0 || math.IsNaN(v) || math.IsInf(v, 0) {
+		return 0, fmt.Errorf("not an amount")
+	}
+	return v, nil
+}
+
 func cmdSecret(args []string) int {
 	if len(args) != 2 || (args[1] != "openrouter" && args[1] != "typesafe") {
 		fmt.Fprint(os.Stderr, usage)
@@ -148,7 +160,15 @@ func cmdSecret(args []string) int {
 	}
 	switch args[0] {
 	case "set":
-		b, err := io.ReadAll(io.LimitReader(os.Stdin, 4096))
+		var b []byte
+		var err error
+		if isTerminal(os.Stdin) { // typed by hand: don't echo the key
+			fmt.Fprint(os.Stderr, args[1]+" API key (hidden): ")
+			b, err = term.ReadPassword(int(os.Stdin.Fd()))
+			fmt.Fprintln(os.Stderr)
+		} else {
+			b, err = io.ReadAll(io.LimitReader(os.Stdin, 4096))
+		}
 		v := strings.TrimSpace(string(b))
 		if err != nil || v == "" {
 			fmt.Fprintln(os.Stderr, "no key on stdin")

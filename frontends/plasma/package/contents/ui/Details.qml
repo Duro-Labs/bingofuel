@@ -147,15 +147,17 @@ Item {
                             Layout.fillWidth: true
                             placeholderText: "New balance in USD, e.g. 4.98"
                             inputMethodHints: Qt.ImhFormattedNumbersOnly
-                            validator: DoubleValidator { bottom: 0; decimals: 4; notation: DoubleValidator.StandardNotation }
+                            validator: RegularExpressionValidator { regularExpression: /^\$?\d{1,6}(\.\d{0,4})?$/ }
                             onAccepted: setBalance.clicked()
                         }
                         QQC2.Button {
                             id: setBalance
                             text: "Update JEV balance"
-                            enabled: balanceField.acceptableInput
+                            enabled: isFinite(details.store.parseBalance(balanceField.text))
                             onClicked: {
-                                details.jevBalanceEntered(Number(balanceField.text.replace(",", ".")))
+                                var v = details.store.parseBalance(balanceField.text)
+                                if (!isFinite(v)) return
+                                details.jevBalanceEntered(v)
                                 balanceField.text = ""
                             }
                         }

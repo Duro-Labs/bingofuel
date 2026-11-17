@@ -22,7 +22,7 @@ Single-row layout, and the popup with every limit, exact reset times and the JEV
 | Claude | `~/.claude/.credentials.json` (or `$CLAUDE_CONFIG_DIR`); `GET api.anthropic.com/api/oauth/usage` | The same usage endpoint Claude Code's `/usage` reads. Undocumented. |
 | Codex | `~/.codex/auth.json` (or `$CODEX_HOME`); `GET chatgpt.com/backend-api/wham/usage` | Undocumented. Needs a ChatGPT login, not API-key mode. |
 | OpenRouter | API key; `GET /api/v1/credits` and `/api/v1/key` | Documented. |
-| JEV (TypeSafe) | A balance you type in; JEV calls found in local usage logs | TypeSafe has no balance API, so the figure is an estimate and marked `≈`. |
+| JEV (TypeSafe) | A balance you type in; JEV calls found in local usage logs | No documented API balance endpoint has been found; this figure is calculated locally, with that distinction explained in the tooltip and popup. |
 
 - **Read-only.** It never refreshes or rewrites another tool's login: refresh tokens rotate, and refreshing behind the CLI's back can log it out. An expired login shows "run claude to refresh it".
 - **No usage quota spent.** These endpoints report usage; they don't call a model.

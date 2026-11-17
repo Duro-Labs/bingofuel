@@ -36,6 +36,7 @@ PlasmoidItem {
     }
 
     toolTipMainText: "Bingo Fuel"
+    toolTipTextFormat: Text.PlainText
     toolTipSubText: {
         var parts = []
         for (var i = 0; i < dataStore.groups.length; i++) {
@@ -72,14 +73,16 @@ PlasmoidItem {
     // environment, not a login shell's, so PATH is set explicitly.
     function command(args) {
         var bin = (root.cfg.binaryPath || "bingofuel").trim()
-        if (bin.startsWith("~/")) bin = "$HOME/" + bin.slice(2)
-        var quoted = bin.indexOf("$HOME/") === 0 ? "\"" + bin + "\"" : shellQuote(bin)
+        // Only the ~/ prefix is expanded; the rest is always single-quoted.
+        var quoted = bin.startsWith("~/") ? "\"$HOME\"/" + shellQuote(bin.slice(2)) : shellQuote(bin)
         return "PATH=\"$HOME/.local/bin:$HOME/go/bin:/usr/local/bin:/usr/bin:/bin:$PATH\" "
             + quoted + " " + args.map(shellQuote).join(" ")
     }
 
     property int nonce: 0
     property var callbacks: ({})
+    property string fetchSource: ""
+    property bool fetchPending: false
 
     Plasma5Support.DataSource {
         id: exec
@@ -99,17 +102,22 @@ PlasmoidItem {
         var src = command(args) + " #" + (++nonce)
         callbacks[src] = cb
         exec.connectSource(src)
+        return src
     }
 
     // maxAge < 0 uses the core's configured floor (5 minutes by default).
     function fetch(maxAge) {
-        if (busy) return
+        if (busy) {
+            fetchPending = true // e.g. a new JEV balance while a fetch runs
+            return
+        }
         busy = true
         fetchTimeout.restart()
         var args = ["fetch"]
         if (maxAge >= 0) args.push("--max-age", String(maxAge))
-        run(args, (code, out, err) => {
+        fetchSource = run(args, (code, out, err) => {
             busy = false
+            fetchSource = ""
             fetchTimeout.stop()
             if (dataStore.parse(out)) {
                 failures = 0
@@ -122,15 +130,42 @@ PlasmoidItem {
                 pollTimer.interval = Math.min(root.cfg.pollInterval * 1000, 60000 * Math.pow(2, failures - 1))
             }
             pollTimer.restart()
+            scheduleResetFetch()
+            if (fetchPending) {
+                fetchPending = false
+                fetch(-1)
+            }
         })
+    }
+
+    // Refetch just after the earliest window reset, so a reset ring doesn't
+    // sit on its old figure until the next poll.
+    function scheduleResetFetch() {
+        dataStore.nowMs = Date.now()
+        var ms = dataStore.msUntilNextReset()
+        if (ms < 0 || ms > root.cfg.pollInterval * 1000) {
+            resetTimer.stop()
+            return
+        }
+        resetTimer.interval = Math.max(5000, ms + 5000)
+        resetTimer.restart()
+    }
+
+    Timer {
+        id: resetTimer
+        onTriggered: root.fetch(-1)
     }
 
     Timer {
         id: fetchTimeout
         interval: 40000
         onTriggered: {
-            for (var s in root.callbacks) exec.disconnectSource(s)
-            root.callbacks = ({})
+            // Drop only the stuck fetch; other commands (e.g. jev balance) keep their callbacks.
+            if (root.fetchSource !== "") {
+                exec.disconnectSource(root.fetchSource)
+                delete root.callbacks[root.fetchSource]
+                root.fetchSource = ""
+            }
             root.busy = false
             dataStore.error = "bingofuel did not answer in 40 s"
         }

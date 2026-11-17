@@ -143,11 +143,15 @@ KCM.SimpleKCM {
             icon.name: "utilities-terminal"
             text: "Run setup in a terminal…"
             onClicked: {
-                var bin = (binaryField.text || "bingofuel").replace(/'/g, "")
-                launcher.connectSource("PATH=\"$HOME/.local/bin:$HOME/go/bin:$PATH\"; "
-                    + "if command -v konsole >/dev/null; then konsole -e '" + bin + "' setup; "
-                    + "elif command -v xdg-terminal-exec >/dev/null; then xdg-terminal-exec '" + bin + "' setup; "
-                    + "else xterm -e '" + bin + "' setup; fi")
+                // Same quoting as main.qml: only a leading ~/ is expanded.
+                var q = s => "'" + String(s).replace(/'/g, "'\\''") + "'"
+                var bin = (binaryField.text || "bingofuel").trim()
+                var cmd = (bin.startsWith("~/") ? "\"$HOME\"/" + q(bin.slice(2)) : q(bin)) + " setup"
+                // --hold keeps the window open so the summary and any error stay readable.
+                launcher.connectSource("PATH=\"$HOME/.local/bin:$HOME/go/bin:/usr/local/bin:/usr/bin:/bin:$PATH\"; export PATH; "
+                    + "if command -v konsole >/dev/null; then konsole --hold -e sh -c " + q(cmd) + "; "
+                    + "elif command -v xdg-terminal-exec >/dev/null; then xdg-terminal-exec sh -c " + q(cmd + "; printf '\\nPress Enter to close'; read x") + "; "
+                    + "else xterm -hold -e sh -c " + q(cmd) + "; fi")
             }
         }
         QQC2.Label {

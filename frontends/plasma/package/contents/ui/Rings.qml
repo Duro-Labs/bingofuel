@@ -52,9 +52,11 @@ MouseArea {
                 width: view.layoutMode === "column" ? flow.width : implicitWidth
                 spacing: 0
 
+                // The heading never widens the group beyond its rings, so the
+                // size fit (which only counts rings) stays true; long names elide.
                 Item {
                     visible: view.showHeadings
-                    width: headingRow.implicitWidth
+                    width: ringsRow.width
                     height: view.store.headingHeight(view.ringSize, view.showHeadings)
 
                     Row {
@@ -64,6 +66,8 @@ MouseArea {
                         height: view.store.headingTextHeight(view.ringSize)
                         spacing: Kirigami.Units.smallSpacing
                         Text {
+                            width: Math.min(implicitWidth, ringsRow.width - (statusIcon.visible ? statusIcon.width + headingRow.spacing : 0))
+                            elide: Text.ElideRight
                             text: groupCol.modelData.title
                             textFormat: Text.PlainText
                             color: view.store.groupColor(groupCol.modelData)
@@ -73,6 +77,7 @@ MouseArea {
                             opacity: groupCol.groupDimmed ? 0.6 : 1
                         }
                         Kirigami.Icon {
+                            id: statusIcon
                             visible: groupCol.modelData.status !== "ok"
                             source: groupCol.groupDimmed ? "data-warning" : "data-information"
                             width: Math.max(12, view.ringSize * 0.14)
@@ -81,11 +86,14 @@ MouseArea {
                         }
                     }
                     HoverHandler { id: headHover }
-                    QQC2.ToolTip.visible: headHover.hovered && view.store.statusText(groupCol.modelData) !== ""
-                    QQC2.ToolTip.text: view.store.statusText(groupCol.modelData)
+                    PlainToolTip {
+                        visible: headHover.hovered && text !== ""
+                        text: view.store.statusText(groupCol.modelData)
+                    }
                 }
 
                 Row {
+                    id: ringsRow
                     spacing: view.store.ringGap(view.ringSize)
                     Repeater {
                         model: groupCol.rings
@@ -106,9 +114,11 @@ MouseArea {
                             fontFamily: view.fontFamily
 
                             HoverHandler { id: ringHover }
-                            QQC2.ToolTip.visible: ringHover.hovered
-                            QQC2.ToolTip.delay: Kirigami.Units.toolTipDelay
-                            QQC2.ToolTip.text: view.store.tooltip(groupCol.modelData, modelData)
+                            PlainToolTip {
+                                visible: ringHover.hovered
+                                delay: Kirigami.Units.toolTipDelay
+                                text: view.store.tooltip(groupCol.modelData, modelData)
+                            }
                         }
                     }
                 }

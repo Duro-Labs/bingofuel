@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -24,7 +23,7 @@ func cmdSetup(_ []string) int {
 	}
 	if err := setup(); err != nil {
 		if errors.Is(err, huh.ErrUserAborted) {
-			fmt.Println("Setup cancelled; nothing was saved.")
+			fmt.Println("Setup cancelled. Keys or balance checkpoints already saved were kept.")
 			return 1
 		}
 		fmt.Fprintln(os.Stderr, "setup failed:", err)
@@ -115,7 +114,7 @@ func setup() error {
 				huh.NewOption("5-Hour", "session"),
 				huh.NewOption("Weekly (all models)", "weekly"),
 				huh.NewOption("Weekly (top model)", "model_weekly"),
-			).Value(&meters).Run(); err != nil {
+			).Value(&meters).Validate(atLeastOne).Run(); err != nil {
 			return err
 		}
 		cfg.Claude.Meters = meters
@@ -134,7 +133,7 @@ func setup() error {
 				huh.NewOption("5-Hour", "session"),
 				huh.NewOption("Weekly", "weekly"),
 				huh.NewOption("Monthly (free plan)", "monthly"),
-			).Value(&meters).Run(); err != nil {
+			).Value(&meters).Validate(atLeastOne).Run(); err != nil {
 				return err
 			}
 			cfg.Codex.Meters = meters
@@ -147,7 +146,10 @@ func setup() error {
 				return "", err
 			}
 			return summarize(g), nil
-		}); err != nil {
+		}); errors.Is(err, errKeySkipped) {
+			cfg.OpenRouter.Enabled = false
+			fmt.Println("  OpenRouter disabled; run setup again with a working key.")
+		} else if err != nil {
 			return err
 		}
 	}
@@ -157,7 +159,10 @@ func setup() error {
 				return "", err
 			}
 			return "key accepted", nil
-		}); err != nil {
+		}); errors.Is(err, errKeySkipped) {
+			// The JEV ring is a local estimate; it still works without a valid key.
+			fmt.Println("  Key not stored; the JEV estimate works without it.")
+		} else if err != nil {
 			return err
 		}
 		if err := setupJEV(&cfg, now); err != nil {
@@ -186,10 +191,20 @@ func setup() error {
 	return nil
 }
 
+// An empty selection means "every meter", so the wizard asks for one or more.
+func atLeastOne(v []string) error {
+	if len(v) == 0 {
+		return errors.New("pick at least one ring")
+	}
+	return nil
+}
+
 func errorIs(err error, s model.Status) bool {
 	st, _ := providers.StatusOf(err)
 	return st == s
 }
+
+var errKeySkipped = errors.New("key not stored")
 
 func setupKey(id, name, env string, existing secrets.Source, test func(context.Context, string) (string, error)) error {
 	const keep, fromEnv, paste = "keep", "env", "paste"
@@ -237,14 +252,19 @@ func setupKey(id, name, env string, existing secrets.Source, test func(context.C
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	if res, err := test(ctx, key); err != nil {
-		_, msg := providers.StatusOf(err)
+		status, msg := providers.StatusOf(err)
 		fmt.Printf("  ✗ %s: %s\n", name, msg)
-		retry := true
-		if err := huh.NewConfirm().Title("Store this key anyway?").Value(&retry).Run(); err != nil {
+		if choice == keep {
+			fmt.Println("  Keeping the stored key; fix it with `bingofuel secret set " + id + "`.")
+			return nil
+		}
+		// A key the provider rejected defaults to No; a network blip defaults to Yes.
+		store := status != model.StatusAuthExpired && status != model.StatusForbidden
+		if err := huh.NewConfirm().Title("Store this key anyway?").Value(&store).Run(); err != nil {
 			return err
 		}
-		if !retry {
-			return nil
+		if !store {
+			return errKeySkipped
 		}
 	} else {
 		fmt.Printf("  ✓ %s: %s\n", name, res)
@@ -290,7 +310,7 @@ func setupJEV(cfg *config.Config, now time.Time) error {
 				if s == "" && len(l.Checkpoints) > 0 {
 					return nil
 				}
-				if v, err := strconv.ParseFloat(s, 64); err != nil || v < 0 {
+				if _, err := parseUSD(s); err != nil {
 					return errors.New("enter an amount like 4.98")
 				}
 				return nil
@@ -307,8 +327,11 @@ func setupJEV(cfg *config.Config, now time.Time) error {
 			cfg.TypeSafe.UsageLogs = append(cfg.TypeSafe.UsageLogs, p)
 		}
 	}
-	if s := strings.TrimPrefix(strings.TrimSpace(bal), "$"); s != "" {
-		v, _ := strconv.ParseFloat(s, 64)
+	if s := strings.TrimSpace(bal); s != "" {
+		v, err := parseUSD(s)
+		if err != nil {
+			return err
+		}
 		if err := ts.SetBalance(v, now); err != nil {
 			return err
 		}

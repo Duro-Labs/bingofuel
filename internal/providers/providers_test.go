@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -342,6 +343,57 @@ func TestTypeSafeLedger(t *testing.T) {
 func epoch(t time.Time) string {
 	b, _ := json.Marshal(float64(t.UnixNano()) / 1e9)
 	return string(b)
+}
+
+func TestLedgerRejectsNonFinite(t *testing.T) {
+	dir := t.TempDir()
+	ts := TypeSafe{LedgerPath: filepath.Join(dir, "ledger.json")}
+	if err := ts.SetBalance(5, now); err != nil {
+		t.Fatal(err)
+	}
+	for _, v := range []float64{math.NaN(), math.Inf(1), -1} {
+		if err := ts.SetBalance(v, now); err == nil {
+			t.Errorf("SetBalance(%v) accepted", v)
+		}
+	}
+	l, err := ts.LoadLedger()
+	if err != nil || len(l.Checkpoints) != 1 || l.Checkpoints[0].BalanceUSD != 5 {
+		t.Errorf("ledger damaged: %+v %v", l, err)
+	}
+}
+
+func TestBillingMatch(t *testing.T) {
+	u := Usage{}
+	scanLine([]byte(`{"ts": 1894000000, "jev": {"error": "timeout after 4020 ms"}}`), now, &u)
+	if u.SawBilling {
+		t.Error("4020 ms timeout read as a 402")
+	}
+	scanLine([]byte(`{"ts": 1894000000, "jev": {"error": "HTTPError: HTTP Error 402: Payment Required"}}`), now, &u)
+	if !u.SawBilling {
+		t.Error("402 missed")
+	}
+}
+
+func TestFractionalEpochKeepsSubSecond(t *testing.T) {
+	cp := time.Unix(1794933451, 100_000_000)
+	u := Usage{}
+	scanLine([]byte(`{"ts": 1794933451.424, "jev": {"input_tokens": 10}}`), cp, &u)
+	if u.Calls != 1 {
+		t.Error("a call 0.3 s after the checkpoint, in the same second, was dropped")
+	}
+}
+
+func TestNoWindowsMeansPlanLapsed(t *testing.T) {
+	dir := t.TempDir()
+	writeCreds(t, dir, `{"claudeAiOauth":{"accessToken":"tok","expiresAt":9999999999999}}`)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`{"five_hour": null, "seven_day": null, "limits": []}`))
+	}))
+	defer srv.Close()
+	_, err := Claude{Cfg: config.Claude{Dir: dir}, URL: srv.URL}.Fetch(context.Background(), now)
+	if !errorStatus(err, model.StatusPlanLapsed) {
+		t.Errorf("err = %v, want plan_lapsed", err)
+	}
 }
 
 func TestWindowLabel(t *testing.T) {

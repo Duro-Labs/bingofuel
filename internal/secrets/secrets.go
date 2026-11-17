@@ -28,12 +28,18 @@ const (
 )
 
 var ErrNotFound = errors.New("no key stored")
+var errKeyringTimeout = errors.New("keyring did not answer")
 
 // keyringTimeout bounds every keyring call: a locked or absent Secret
 // Service must degrade to the file fallback, not hang the widget.
 const keyringTimeout = 3 * time.Second
 
-func withTimeout[T any](f func() (T, error)) (T, error) {
+// setTimeout is longer: storing may wait on a keyring unlock prompt.
+const setTimeout = 60 * time.Second
+
+func withTimeout[T any](f func() (T, error)) (T, error) { return withTimeoutD(keyringTimeout, f) }
+
+func withTimeoutD[T any](d time.Duration, f func() (T, error)) (T, error) {
 	type res struct {
 		v   T
 		err error
@@ -43,9 +49,9 @@ func withTimeout[T any](f func() (T, error)) (T, error) {
 	select {
 	case r := <-ch:
 		return r.v, r.err
-	case <-time.After(keyringTimeout):
+	case <-time.After(d):
 		var zero T
-		return zero, errors.New("keyring did not answer")
+		return zero, errKeyringTimeout
 	}
 }
 
@@ -69,9 +75,13 @@ func Get(provider, envName string) (string, Source, error) {
 // Set stores the key in the keyring, or in the fallback file if the keyring
 // is unavailable. It reports where the key went.
 func Set(provider, value string) (Source, error) {
-	if _, err := withTimeout(func() (struct{}, error) { return struct{}{}, keyring.Set(service, provider, value) }); err == nil {
+	if _, err := withTimeoutD(setTimeout, func() (struct{}, error) { return struct{}{}, keyring.Set(service, provider, value) }); err == nil {
 		_ = fileDelete(provider) // one source of truth
 		return SourceKeyring, nil
+	} else if errors.Is(err, errKeyringTimeout) {
+		// Set may still complete after the prompt is answered. Do not also
+		// write a plaintext copy while that operation is outstanding.
+		return SourceNone, err
 	}
 	if err := fileSet(provider, value); err != nil {
 		return SourceNone, err

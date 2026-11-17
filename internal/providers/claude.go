@@ -119,7 +119,8 @@ func (c Claude) Fetch(ctx context.Context, now time.Time) (model.Group, error) {
 	}
 	g.Meters, g.Details = parseClaude(m)
 	if len(g.Meters) == 0 {
-		return g, errf(model.StatusError, "Claude reported no usage windows")
+		// A subscription that ended reports no windows at all.
+		return g, errf(model.StatusPlanLapsed, "Claude reported no usage windows: is the subscription still active?")
 	}
 	applySelection(g.Meters, c.Cfg.Meters)
 	return g, nil

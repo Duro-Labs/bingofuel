@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"os"
 	"os/exec"
@@ -125,8 +126,9 @@ func parseTime(v any) *time.Time {
 			}
 		}
 	case float64:
-		if t > 0 {
-			p := time.Unix(int64(t), 0)
+		if t > 0 && !math.IsInf(t, 0) {
+			sec := math.Floor(t)
+			p := time.Unix(int64(sec), int64((t-sec)*1e9))
 			return &p
 		}
 	}
