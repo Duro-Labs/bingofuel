@@ -1,0 +1,36 @@
+{
+ "user_id": "user-FAKE",
+ "account_id": "acct-FAKE",
+ "email": "someone@example.com",
+ "plan_type": "plus",
+ "rate_limit": {
+  "allowed": true,
+  "limit_reached": false,
+  "primary_window": {
+   "used_percent": 0,
+   "limit_window_seconds": 18000,
+   "reset_after_seconds": 8000,
+   "reset_at": 1794953585
+  },
+  "secondary_window": {
+   "used_percent": 24,
+   "limit_window_seconds": 604800,
+   "reset_after_seconds": 200000,
+   "reset_at": 1795139384
+  }
+ },
+ "code_review_rate_limit": null,
+ "additional_rate_limits": null,
+ "model_usage": null,
+ "promo": null,
+ "credits": {
+  "has_credits": false,
+  "unlimited": false,
+  "balance": null
+ },
+ "rate_limit_reset_credits": null,
+ "spend_control": {
+  "reached": false
+ },
+ "rate_limit_reached_type": null
+}

@@ -1,0 +1,32 @@
+{
+  "plan_type": "plus",
+  "rate_limit": {
+    "allowed": true,
+    "limit_reached": false,
+    "primary_window": {
+      "used_percent": 12.5,
+      "limit_window_seconds": 18000,
+      "reset_after_seconds": 9000,
+      "reset_at": 1789069621
+    },
+    "secondary_window": {
+      "used_percent": 61,
+      "limit_window_seconds": 604800,
+      "reset_after_seconds": 300000,
+      "reset_at": 1789360621
+    }
+  },
+  "code_review_rate_limit": {
+    "used_percent": 4,
+    "limit_window_seconds": 604800,
+    "reset_at": 1789360621
+  },
+  "additional_rate_limits": [
+    { "name": "Cloud tasks", "used_percent": 30, "limit_window_seconds": 86400, "reset_at": 1789146000 }
+  ],
+  "model_usage": {
+    "gpt-5.6-terra": { "used_percent": 44, "limit_window_seconds": 604800, "reset_at": 1789360621 }
+  },
+  "credits": { "has_credits": true, "unlimited": false, "balance": 1250 },
+  "rate_limit_reached_type": null
+}

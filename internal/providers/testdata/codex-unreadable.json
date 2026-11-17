@@ -1,0 +1,10 @@
+{
+  "plan_type": "team",
+  "rate_limit": {
+    "primary_window": { "used_percent": 7, "limit_window_seconds": 18000, "reset_at": 1789069621 },
+    "secondary_window": { "note": "no percentage here" }
+  },
+  "code_review_rate_limit": "unavailable",
+  "additional_rate_limits": [ { "name": "Broken", "reset_at": 1789146000 } ],
+  "model_usage": { "gpt-mystery": null }
+}
