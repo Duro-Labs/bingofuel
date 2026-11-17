@@ -39,18 +39,18 @@
    "is_active": false
   },
   {
-   "kind": "weekly_model",
+   "kind": "weekly_scoped",
    "group": "weekly",
    "percent": 61,
    "resets_at": "2026-11-20T21:59:59Z",
    "scope": {
     "model": {
-     "display_name": "Opus"
+     "display_name": "Fable 5.2"
     }
    }
   },
   {
-   "kind": "weekly_model",
+   "kind": "weekly_scoped",
    "group": "weekly",
    "percent": 12,
    "resets_at": "2026-11-20T21:59:59Z",

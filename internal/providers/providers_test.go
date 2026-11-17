@@ -53,7 +53,7 @@ func TestParseClaudeLimits(t *testing.T) {
 		pct   float64
 	}{
 		"session": {"5-Hour", 54}, "weekly": {"Weekly", 45},
-		"weekly_opus": {"Opus", 61}, "weekly_sonnet": {"Sonnet", 12},
+		"weekly_fable_5_2": {"Fable 5.2", 61}, "weekly_sonnet": {"Sonnet", 12},
 	}
 	for id, w := range want {
 		m, ok := got[id]
@@ -92,8 +92,8 @@ func TestSelectionTopModel(t *testing.T) {
 			shown = append(shown, m.ID)
 		}
 	}
-	if strings.Join(shown, ",") != "session,weekly_opus" {
-		t.Errorf("shown = %v, want session + the most-used model weekly (opus)", shown)
+	if strings.Join(shown, ",") != "session,weekly_fable_5_2" {
+		t.Errorf("shown = %v, want session + the most-used model weekly (Fable)", shown)
 	}
 	ApplySelection(meters, nil)
 	for _, m := range meters {
