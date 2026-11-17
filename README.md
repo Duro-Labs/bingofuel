@@ -2,15 +2,13 @@
 
 In aviation, *bingo fuel* is the fuel level at which a pilot has to turn for home or won't make it back. Bingo Fuel is the same warning for AI work: rings on your desktop that show how much of your Claude and Codex subscription limits you've used, and how much prepaid OpenRouter and JEV credit is left, before you start a task you can't finish.
 
-```
-Claude                          Codex
- ( 47% )  ( 44% )                (  0% )  ( 24% )
- 5-Hour   Weekly                 5-Hour   Weekly
- 03:22    3d 3h                  03:45    2d 19h
+![Bingo Fuel rings on the desktop](docs/screenshots/rings.png)
 
-OpenRouter        JEV
- ( $9.93 )        ( ≈$4.98 )
-```
+Single-row layout, and the popup with every limit, exact reset times and the JEV balance field:
+
+![Single-row layout](docs/screenshots/rings-row.png)
+
+<img src="docs/screenshots/popup.png" alt="Popup" width="424">
 
 - **Quota rings** (Claude, Codex) show the share of the window used, its name and the time until it resets. Past the warning threshold the arc and the name take the warning colour.
 - **Credit rings** (OpenRouter, JEV) fill with the share of the credit spent, and show only what's left.
@@ -72,7 +70,7 @@ internal/cli/           fetch, status, setup wizard, doctor
 frontends/plasma/       the KDE Plasma 6 widget (draws only; all logic is in the core)
 ```
 
-`make test` runs the Go tests and the QML tests. Other desktops (GNOME, macOS, Windows) can be added as further front-ends reading `bingofuel fetch --json`.
+`make test` runs the Go tests and the QML tests. `frontends/plasma/tools/preview.qml` and `preview-popup.qml` render the widget offscreen from `bingofuel fetch` output; the screenshots above come from them. Other desktops (GNOME, macOS, Windows) can be added as further front-ends reading `bingofuel fetch --json`.
 
 ## Credits
 

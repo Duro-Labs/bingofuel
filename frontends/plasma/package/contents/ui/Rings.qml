@@ -12,6 +12,7 @@ MouseArea {
     property string layoutMode: "grid"
     property bool showHeadings: true
     property bool busy: false
+    property string fontFamily: Kirigami.Theme.defaultFont.family
 
     signal toggled()
 
@@ -58,12 +59,15 @@ MouseArea {
 
                     Row {
                         id: headingRow
-                        anchors.verticalCenter: parent.verticalCenter
+                        // Label at the top; the rest of the height is the gap above the rings.
+                        anchors.top: parent.top
+                        height: view.store.headingTextHeight(view.ringSize)
                         spacing: Kirigami.Units.smallSpacing
                         Text {
                             text: groupCol.modelData.title
                             textFormat: Text.PlainText
                             color: view.store.groupColor(groupCol.modelData)
+                            font.family: view.fontFamily
                             font.pixelSize: Math.max(12, view.ringSize * 0.16)
                             font.weight: Font.DemiBold
                             opacity: groupCol.groupDimmed ? 0.6 : 1
@@ -99,7 +103,7 @@ MouseArea {
                             alert: view.store.alert(modelData)
                             countdown: view.store.countdownText(modelData)
                             dimmed: groupCol.groupDimmed
-                            fontFamily: Kirigami.Theme.defaultFont.family
+                            fontFamily: view.fontFamily
 
                             HoverHandler { id: ringHover }
                             QQC2.ToolTip.visible: ringHover.hovered

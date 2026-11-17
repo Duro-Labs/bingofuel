@@ -1,5 +1,5 @@
 // Renders the desktop rings outside Plasma and saves a PNG.
-// Usage: QML_XHR_ALLOW_FILE_READ=1 qml preview.qml -- <fetch.json> <out.png> [width] [height] [layout]
+// Usage: QML_XHR_ALLOW_FILE_READ=1 qml preview.qml -- <fetch.json> <out.png> [width] [height] [layout] [font family]
 import QtQuick
 import QtQuick.Window
 import org.kde.kirigami as Kirigami
@@ -33,6 +33,7 @@ Window {
         Kirigami.Theme.disabledTextColor: "#9aa0a6"
         store: store
         layoutMode: win.args[4] || "grid"
+        fontFamily: win.args[5] || Qt.application.font.family
     }
 
     Component.onCompleted: {

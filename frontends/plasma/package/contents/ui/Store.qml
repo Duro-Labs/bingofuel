@@ -162,7 +162,10 @@ QtObject {
     // the simulation and the real Flow agree.
     function ringGap(s) { return Math.max(4, s * 0.14) }
     function groupGap(s) { return Math.max(8, s * 0.32) }
-    function headingHeight(s, show) { return show ? Math.max(12, s * 0.16) * 1.5 : 0 }
+    // Label line plus a fixed gap between the label and its rings.
+    readonly property int headingGap: 8
+    function headingTextHeight(s) { return Math.max(12, s * 0.16) * 1.35 }
+    function headingHeight(s, show) { return show ? headingTextHeight(s) + headingGap : 0 }
 
     // Largest ring size that fits `counts` (rings per group) into w x h.
     // mode: grid (groups flow and wrap), row (one line), column (one group per line).
