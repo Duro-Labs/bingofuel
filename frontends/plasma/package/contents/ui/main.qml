@@ -33,7 +33,6 @@ PlasmoidItem {
         textColor: Kirigami.Theme.textColor
         currencySymbol: root.cfg.currencySymbol
         gaugeLabel: root.cfg.gaugeLabel
-        showBingo: root.cfg.showBingo
     }
 
     toolTipMainText: "Bingo Fuel"

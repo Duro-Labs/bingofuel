@@ -16,7 +16,6 @@ KCM.SimpleKCM {
     property string cfg_layoutMode
     property string cfg_gaugeLabel
     property alias cfg_showHeadings: headingsCheck.checked
-    property alias cfg_showBingo: bingoCheck.checked
     property alias cfg_warningThreshold: warningSpin.value
     property alias cfg_criticalThreshold: criticalSpin.value
     property alias cfg_currencySymbol: currencyField.text
@@ -35,7 +34,6 @@ KCM.SimpleKCM {
     property var cfg_layoutModeDefault
     property var cfg_gaugeLabelDefault
     property var cfg_showHeadingsDefault
-    property var cfg_showBingoDefault
     property var cfg_warningThresholdDefault
     property var cfg_criticalThresholdDefault
     property var cfg_currencySymbolDefault
@@ -88,7 +86,6 @@ KCM.SimpleKCM {
             onActivated: cfg_gaugeLabel = page.labelModel[currentIndex].value
         }
         QQC2.CheckBox { id: headingsCheck; Kirigami.FormData.label: "Provider headings:"; text: "Show above each group" }
-        QQC2.CheckBox { id: bingoCheck; Kirigami.FormData.label: "Warning:"; text: "Show BINGO past the warning threshold" }
 
         Kirigami.Separator { Kirigami.FormData.isSection: true; Kirigami.FormData.label: "Thresholds" }
 

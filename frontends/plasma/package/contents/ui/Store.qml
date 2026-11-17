@@ -15,7 +15,6 @@ QtObject {
     property color textColor: "white"
     property string currencySymbol: "$"
     property string gaugeLabel: "percent"  // percent | time
-    property bool showBingo: true
     property real nowMs: Date.now()
 
     // --- state ---
@@ -107,12 +106,15 @@ QtObject {
         return Math.round(meter.percent) + "%"
     }
 
-    // Second line: the window name, or BINGO once past the warning threshold.
-    // Credit rings show only their value.
+    // Second line: the window name. Credit rings show only their value.
     function nameText(meter) {
         if (!meter || meter.kind !== "window") return ""
-        if (showBingo && meter.percent >= warningThreshold) return "BINGO"
         return meter.label || ""
+    }
+
+    // Past the warning threshold the name takes the ring's warning colour.
+    function alert(meter) {
+        return !!meter && meter.kind === "window" && meter.percent >= warningThreshold
     }
 
     // Third line: time to reset, unless the value line already shows it.

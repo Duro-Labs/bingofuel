@@ -96,6 +96,7 @@ MouseArea {
                             subTextColor: Kirigami.Theme.disabledTextColor
                             value: view.store.valueText(modelData)
                             name: view.store.nameText(modelData)
+                            alert: view.store.alert(modelData)
                             countdown: view.store.countdownText(modelData)
                             dimmed: groupCol.groupDimmed
                             fontFamily: Kirigami.Theme.defaultFont.family

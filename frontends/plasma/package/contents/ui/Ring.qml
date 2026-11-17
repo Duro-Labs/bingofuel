@@ -14,6 +14,7 @@ Item {
     property string name: ""
     property string countdown: ""
     property bool dimmed: false
+    property bool alert: false   // colour the name line like the arc
     property string fontFamily: ""
 
     readonly property real size: Math.min(width, height)
@@ -80,9 +81,8 @@ Item {
             visible: text !== "" && ring.roomForName
             text: ring.name
             textFormat: Text.PlainText
-            color: ring.name === "BINGO" ? ring.arcColor : ring.subTextColor
+            color: ring.alert ? ring.arcColor : ring.subTextColor
             font.family: ring.fontFamily
-            font.bold: ring.name === "BINGO"
             font.pixelSize: Math.max(6, ring.size * 0.13)
             width: ring.innerDiameter
             horizontalAlignment: Text.AlignHCenter

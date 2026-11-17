@@ -28,7 +28,6 @@ TestCase {
 
     function init() {
         store.gaugeLabel = "percent"
-        store.showBingo = true
         store.lightTheme = false
         verify(store.parse(sample))
     }
@@ -46,11 +45,12 @@ TestCase {
         compare(store.valueText(s), "47%")
         compare(store.nameText(s), "5-Hour")
         compare(store.countdownText(s), "03:22")
+        verify(!store.alert(s))
         var w = store.groups[0].meters[1]
-        compare(store.nameText(w), "BINGO", "past the warning threshold")
+        compare(store.nameText(w), "Weekly", "the name never changes")
+        verify(store.alert(w), "past the warning threshold the name is coloured")
         compare(store.countdownText(w), "3d 3h")
-        store.showBingo = false
-        compare(store.nameText(w), "Weekly")
+        verify(!store.alert(store.groups[1].meters[0]), "credit rings have no name line")
     }
 
     function test_time_mode_swaps_lines() {

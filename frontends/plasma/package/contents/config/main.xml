@@ -12,7 +12,6 @@
         <entry name="layoutMode" type="String"><default>grid</default></entry>
         <entry name="gaugeLabel" type="String"><default>percent</default></entry>
         <entry name="showHeadings" type="Bool"><default>true</default></entry>
-        <entry name="showBingo" type="Bool"><default>true</default></entry>
         <entry name="warningThreshold" type="Int"><default>80</default></entry>
         <entry name="criticalThreshold" type="Int"><default>95</default></entry>
         <entry name="currencySymbol" type="String"><default>$</default></entry>

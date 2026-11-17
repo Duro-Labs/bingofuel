@@ -12,7 +12,7 @@ OpenRouter        JEV
  ( $9.93 )        ( ≈$4.98 )
 ```
 
-- **Quota rings** (Claude, Codex) show the share of the window used, its name and the time until it resets. Past the warning threshold the name turns into **BINGO**.
+- **Quota rings** (Claude, Codex) show the share of the window used, its name and the time until it resets. Past the warning threshold the arc and the name take the warning colour.
 - **Credit rings** (OpenRouter, JEV) fill with the share of the credit spent, and show only what's left.
 - One poll cycle for every provider, with a cache: a 5-minute floor between calls, the last figures held for 30 minutes after a rate limit, and a refetch when a window resets.
 - Failures never show as 0%. A provider whose data is old or whose login expired is dimmed, with the reason on hover.
