@@ -1,0 +1,19 @@
+{
+    "KPlugin": {
+        "Id": "com.fernandoduro.bingofuel",
+        "Name": "Bingo Fuel",
+        "Description": "Rings for how much AI quota and credit you have left: Claude, Codex, OpenRouter and JEV",
+        "Icon": "speedometer",
+        "Authors": [
+            {
+                "Name": "Fernando Duro"
+            }
+        ],
+        "Category": "System Information",
+        "License": "MIT",
+        "Version": "0.1.0",
+        "Website": "https://github.com/fernandoduro/bingofuel"
+    },
+    "KPackageStructure": "Plasma/Applet",
+    "X-Plasma-API-Minimum-Version": "6.0"
+}
